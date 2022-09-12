@@ -534,6 +534,7 @@ class Presentation:
         self,
         name: str = "",
         pr_id: str = "",
+        pr_object: Optional[object] = None,
         sl_ids: list = [],
         ch_ids: dict = {},
         page_size: Tuple[int, int] = (9144000, 5143500),
@@ -542,6 +543,7 @@ class Presentation:
         """Constructor method"""
         self.name = name
         self.pr_id = pr_id
+        self.pr_object = pr_object
         self.sl_ids = sl_ids
         self.ch_ids = ch_ids
         self.page_size = page_size
@@ -580,7 +582,7 @@ class Presentation:
             body={"requests": [{"deleteObject": {"objectId": "p"}}]},
         ).execute()
         logger.info("Presentation successfully created")
-        return cls(name, pr_id, [], {}, (9144000, 5143500), True)
+        return cls(name, pr_id, output, [], {}, (9144000, 5143500), True)
 
     @classmethod
     def get(cls: Type[TPresentation], presentation_id: str) -> TPresentation:
@@ -609,7 +611,7 @@ class Presentation:
         charts = json_chunk_key_extract(output, "sheetsChart")
         for chart in charts:
             chart_ids[chart["objectId"]] = chart["title"]
-        return cls(name, presentation_id, sl_ids, chart_ids, page_size, True)
+        return cls(name, presentation_id, output, sl_ids, chart_ids, page_size, True)
 
     def add_slide(
         self,
@@ -743,8 +745,7 @@ class Presentation:
                 f"{PRESENTATION_PARAMS['data_label_placement']['url']} for further documentation."
             )
 
-    def show_slide(self, slide_id: str, image_size: str = "LARGE") -> Image:
-        """Displays a given slide in a Jupyter notebook.
+    def show_slide(self, slide_id: str, image_size: str = "LARGE") -> Image:        """Displays a given slide in a Jupyter notebook.
 
         :param slide_id: The id of the slide to show
         :type slide_id: str

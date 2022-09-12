@@ -208,13 +208,8 @@ class TestAddSlide:
 
 class TestPresentation:
     def setup(self):
-        self.object = Presentation(
-            name="test",
-            pr_id="abcd",
-            sl_ids=[1111, 2222, 3333],
-            ch_ids={"a1b2c3d4": "Test Chart"},
-            initialized=True,
-        )
+        self.object = Presentation(name="test", pr_id="abcd", pr_object=None, sl_ids=[1111, 2222, 3333],
+                                   ch_ids={"a1b2c3d4": "Test Chart"}, initialized=True)
 
     def test_repr(self):
         self.object.__repr__()
