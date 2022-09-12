@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Creates the slides and charts in Google slides
+Creates the slides and charts in Google Slides
 """
 import logging
 import pprint
@@ -75,7 +75,7 @@ class Layout:
             self.y_length
             - self.y_length * ((self.x_objects - 1) * self.spacing + self.y_border * 2)
         ) / self.x_objects
-        return (x_size, y_size)
+        return x_size, y_size
 
     def __iter__(self: TLayout) -> TLayout:
         """Iterator function
@@ -95,12 +95,12 @@ class Layout:
         """
         x_coord = self.index // self.y_objects
         y_coord = self.index % self.y_objects
-        return (x_coord, y_coord)
+        return x_coord, y_coord
 
     def __next__(self) -> Tuple[float, float]:
         """Next function
 
-        :return: A tuple for the translate x and translate y value
+        :return: A tuple for the translated x and translate y value
         :rtype: tuple
         """
 
@@ -119,7 +119,7 @@ class Layout:
             self.index = 0
         else:
             self.index += 1
-        return (translate_x, translate_y)
+        return translate_x, translate_y
 
 
 class AddSlide:
@@ -186,8 +186,9 @@ class AddSlide:
         self.title = title
         self.notes = notes
 
-    def _validate_layout(self, layout: Tuple[int, int]) -> Tuple[int, int]:
-        """Validates that the layout of charts is a valide layout.
+    @staticmethod
+    def _validate_layout(layout: Tuple[int, int]) -> Tuple[int, int]:
+        """Validates that the layout of charts is a valid layout.
 
         :param layout: The layout of the chart objects in # of rows by # of columns
         :type layout: tuple
@@ -201,19 +202,16 @@ class AddSlide:
                 "Provide tuple where the first index is the number of rows and "
                 "the second index is the number of columns"
             )
-        elif layout[0] < 1:
-            raise ValueError(
-                "Provide tuple where each value is an integer greater than 0"
-            )
-        elif layout[1] < 1:
+        elif layout[0] < 1 or layout[1] < 1:
             raise ValueError(
                 "Provide tuple where each value is an integer greater than 0"
             )
         else:
             return layout
 
+    @staticmethod
     def _validate_objects(
-        self, objects: List[Union[Chart, Table]]
+            objects: List[Union[Chart, Table]]
     ) -> List[Union[Chart, Table]]:
         """Validates that there is a list of objects
 
@@ -230,7 +228,7 @@ class AddSlide:
             return objects
 
     def render_json_create_slide(self) -> dict:
-        """Renders the json to create the slide in Google slides.
+        """Renders the json to create the slide in Google Slides.
 
         :return: The json to do the update
         :rtype: dict
@@ -245,7 +243,7 @@ class AddSlide:
         return json
 
     def render_json_create_textboxes(self, slide_id: str) -> dict:
-        """Renders the json to create the textboxes in Google slides.
+        """Renders the json to create the textboxes in Google Slides.
 
         :param slide_id: The slide_id of the slide to create textbox in
         :type slide_id: str
@@ -301,7 +299,7 @@ class AddSlide:
     def render_json_format_textboxes(
         self, title_box_id: int, notes_box_id: int
     ) -> dict:
-        """Renders the json to format the textboxes in Google slides.
+        """Renders the json to format the textboxes in Google Slides.
 
         :param title_box_id: The id of the title box
         :type title_box_id: int
@@ -368,7 +366,7 @@ class AddSlide:
         translate_x: float,
         translate_y: float,
     ) -> dict:
-        """Renders the json to copy the charts in Google slides.
+        """Renders the json to copy the charts in Google Slides.
 
         :param chart: The chart to copy
         :type chart: :class:`Chart`
@@ -439,14 +437,11 @@ class AddSlide:
         body = self.render_json_format_textboxes(self.title_bx_id, self.notes_bx_id)
         logger.info("Executing textbox creation")
         logger.info(f"Request: {pprint.pformat(body)}")
-        output = (
-            service.presentations()
-            .batchUpdate(
-                presentationId=self.presentation_id,
-                body=body,
-            )
-            .execute()
-        )
+        service.presentations(
+        ).batchUpdate(
+            presentationId=self.presentation_id,
+            body=body,
+        ).execute()
         logger.info("Textboxes formatted successfully")
 
     def _execute_populate_objects(self) -> None:
@@ -511,7 +506,7 @@ class AddSlide:
 
 
 class Presentation:
-    """An object that represents a presentation in Google slides. Initialize the
+    """An object that represents a presentation in Google Slides. Initialize the
     object through either the :class:`Presentation.get` or
     :class:`Presentation.create` class method.
 
@@ -535,8 +530,8 @@ class Presentation:
         name: str = "",
         pr_id: str = "",
         pr_object: Optional[object] = None,
-        sl_ids: list = [],
-        ch_ids: dict = {},
+        sl_ids: Optional[List[str]] = None,
+        ch_ids: Optional[Dict[str, Any]] = None,
         page_size: Tuple[int, int] = (9144000, 5143500),
         initialized: bool = False,
     ) -> None:
@@ -544,19 +539,19 @@ class Presentation:
         self.name = name
         self.pr_id = pr_id
         self.pr_object = pr_object
-        self.sl_ids = sl_ids
-        self.ch_ids = ch_ids
+        self.sl_ids = sl_ids if sl_ids else []
+        self.ch_ids = ch_ids if ch_ids else {}
         self.page_size = page_size
         self.initialized = initialized
 
     def __repr__(self) -> str:
         """Prints class information.
 
-        :return: String with helpful class infromation
+        :return: String with helpful class information
         :rtype: str
 
         """
-        output = f"Presentation\n" f" - presentation_id = {self.presentation_id}"
+        output = f"Presentation\n - presentation_id = {self.presentation_id}"
         return output
 
     @classmethod
@@ -682,8 +677,8 @@ class Presentation:
         logger.info("Slide successfully deleted")
         self.sl_ids.remove(slide_id)
 
-    def template(self, mapping: dict, slide_ids: list = []) -> None:
-        """Replaces all text encaspulated with `{{ <TEXT> }}` with input.
+    def template(self, mapping: dict, slide_ids: Optional[List[str]] = None) -> None:
+        """Replaces all text encapsulated with `{{ <TEXT> }}` with input.
 
         :param mapping: Dictionary mapping old text to new text
         :type mapping: dict
@@ -692,21 +687,21 @@ class Presentation:
         :type slide_ids: list, optional
         """
 
-        requests = []
+        replace_requests = []
         for key, val in mapping.items():
             json = {
                 "replaceAllText": {
                     "replaceText": val,
-                    "pageObjectIds": slide_ids,
+                    "pageObjectIds": slide_ids if slide_ids else [],
                     "containsText": {"text": f"{{{{ {key} }}}}", "matchCase": False},
                 }
             }
-            requests.append(json)
+            replace_requests.append(json)
         service: Any = creds.slide_service
         logger.info("Templating data")
         service.presentations().batchUpdate(
             presentationId=self.presentation_id,
-            body={"requests": requests},
+            body={"requests": replace_requests},
         ).execute()
         logger.info("Data successfully templated")
 
@@ -714,23 +709,24 @@ class Presentation:
         """Updates all the charts in the slides deck with refreshed underlying
         data.
         """
-        requests = []
+        update_requests = []
         for key in self.chart_ids.keys():
             json = {
                 "refreshSheetsChart": {
                     "objectId": key,
                 }
             }
-            requests.append(json)
+            update_requests.append(json)
         service: Any = creds.slide_service
         logger.info("Update charts")
         service.presentations().batchUpdate(
             presentationId=self.presentation_id,
-            body={"requests": requests},
+            body={"requests": update_requests},
         ).execute()
         logger.info("Charts successfully updated")
 
-    def _validate_image_size(self, image_size):
+    @staticmethod
+    def _validate_image_size(image_size):
         """Validate that the image size configuration is valid
 
         :param image_size: String to configure the image size
@@ -745,7 +741,8 @@ class Presentation:
                 f"{PRESENTATION_PARAMS['data_label_placement']['url']} for further documentation."
             )
 
-    def show_slide(self, slide_id: str, image_size: str = "LARGE") -> Image:        """Displays a given slide in a Jupyter notebook.
+    def show_slide(self, slide_id: str, image_size: str = "LARGE") -> Image:
+        """Displays a given slide in a Jupyter notebook.
 
         :param slide_id: The id of the slide to show
         :type slide_id: str
@@ -801,7 +798,7 @@ class Presentation:
     def get_method(self) -> str:
         """Returns the corresponding get initialization method.
 
-        :return: Get intialization method
+        :return: Get initialization method
         :rtype: str
 
         """
